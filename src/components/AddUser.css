@@ -53,3 +53,27 @@ button:hover {
 .back-button:hover {
   background-color: #da190b;
 }
+
+.roles-section,
+.permissions-section {
+  margin-bottom: 20px;
+}
+
+.roles-section h3,
+.permissions-section h3 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.roles-section .grid,
+.permissions-section .grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.roles-section .grid div,
+.permissions-section .grid div {
+  display: flex;
+  align-items: center;
+}

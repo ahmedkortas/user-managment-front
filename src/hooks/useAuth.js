@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode"; // Correct import statement
+import { jwtDecode } from "jwt-decode";
 
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -20,5 +20,26 @@ export const useAuth = () => {
     }
   }, []);
 
-  return { isAuthenticated };
+  const login = (token) => {
+    localStorage.setItem("token", token);
+    setIsAuthenticated(true);
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setIsAuthenticated(false);
+  };
+
+  const checkAuth = () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const decoded = jwtDecode(token);
+      console.log(decoded);
+      const now = Date.now() / 1000;
+      return decoded.exp > now;
+    }
+    return false;
+  };
+
+  return { isAuthenticated, login, logout, checkAuth };
 };

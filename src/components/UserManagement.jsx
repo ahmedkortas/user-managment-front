@@ -1,52 +1,40 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "./UserManagement.css";
 import { useAuth } from "../hooks/useAuth";
+import fetchWithAuth from "../helpers/fetchWithAuth";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [permissions, setPermissions] = useState([]);
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const [currentUserPermissions, setCurrentUserPermissions] = useState([]);
+  const { isAuthenticated, checkAuth } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login");
+    if (!checkAuth()) {
+      window.location.href = "/login";
+      return;
     }
-    const token = localStorage.getItem("token");
-    fetch("http://localhost:8000/api/roles", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => setRoles(data))
-      .catch((error) => console.error("Error fetching roles:", error));
 
-    fetch("http://localhost:8000/api/permissions", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => setPermissions(data))
-      .catch((error) => console.error("Error fetching permissions:", error));
-
-    fetch("http://localhost:8000/api/users", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    // Fetch users
+    fetchWithAuth("http://localhost:8000/api/users")
       .then((response) => response.json())
       .then((data) => setUsers(data))
       .catch((error) => console.error("Error fetching users:", error));
-  }, [isAuthenticated, navigate]);
+
+    // Fetch current user permissions
+    fetchWithAuth("http://localhost:8000/api/current-user-permissions")
+      .then((response) => response.json())
+      .then((data) => setCurrentUserPermissions(data.permissions))
+      .catch((error) => console.error("Error fetching permissions:", error));
+  }, []);
+
+  console.log(currentUserPermissions);
 
   return (
     <div>
       <h1>User Management</h1>
-      <button onClick={() => navigate("/add-user")}>Add User</button>
+      <button onClick={() => (window.location.href = "/add-user")}>
+        Add User
+      </button>
       <table>
         <thead>
           <tr>
@@ -76,14 +64,28 @@ const UserManagement = () => {
               <td>{user.status}</td>
               <td>
                 <button
-                  onClick={() => navigate(`/edit-user/${user.userId}`)}
-                  disabled={!user.permissions.includes("Edit")}
+                  onClick={() =>
+                    (window.location.href = `/edit-user/${user.userId}`)
+                  }
+                  disabled={!currentUserPermissions.includes("Execute")}
+                  style={{
+                    backgroundColor: !currentUserPermissions.includes("Execute")
+                      ? "grey"
+                      : "#4CAF50",
+                  }}
                 >
                   Edit
                 </button>
                 <button
-                  onClick={() => navigate(`/delete-user/${user.userId}`)}
-                  disabled={!user.permissions.includes("Delete")}
+                  onClick={() =>
+                    (window.location.href = `/delete-user/${user.userId}`)
+                  }
+                  disabled={!currentUserPermissions.includes("Delete")}
+                  style={{
+                    backgroundColor: !currentUserPermissions.includes("Delete")
+                      ? "grey"
+                      : "#4CAF50",
+                  }}
                 >
                   Delete
                 </button>

@@ -32,3 +32,7 @@ button:hover {
 button:focus {
   outline: none;
 }
+button:disabled {
+  background-color: grey; /* Grey background */
+  color: #ccc; /* Light grey text */
+}

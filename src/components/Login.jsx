@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
-  const navigate = useNavigate();
-
+  const navigate = useNavigate(); // useNavigate hook here
+  const { login, checkAuth } = useAuth();
+  if (checkAuth()) {
+    navigate("/user-management");
+  }
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -28,8 +32,8 @@ const Login = () => {
       }
 
       const { token } = await response.json();
-      localStorage.setItem("token", token);
-      navigate("/user-management");
+      login(token);
+      navigate("/user-management"); // Use navigate here
     } catch (error) {
       setError(error.message);
     }

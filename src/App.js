@@ -9,17 +9,22 @@ import AddUser from "./components/AddUser";
 import UserManagement from "./components/UserManagement";
 import Login from "./components/Login";
 import { useAuth } from "./hooks/useAuth";
+import EditUser from "./components/EditUser";
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  const { checkAuth } = useAuth();
+
+  if (!checkAuth()) {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
 };
 
 const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
         <Route
           path="/add-user"
           element={
@@ -35,8 +40,16 @@ const App = () => {
               <UserManagement />
             </ProtectedRoute>
           }
+        />{" "}
+        <Route
+          path="/edit-user/:userId"
+          element={
+            <ProtectedRoute>
+              <EditUser />
+            </ProtectedRoute>
+          }
         />
-        {/* Add more routes as needed */}
+        <Route path="/*" element={<Login />} />
       </Routes>
     </Router>
   );

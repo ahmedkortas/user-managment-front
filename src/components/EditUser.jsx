@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "./AddUser.css";
+import { useParams, useNavigate } from "react-router-dom";
+import "./AddUser.css"; // Using the same CSS file as AddUser
 import { useAuth } from "../hooks/useAuth";
+import fetchWithAuth from "../helpers/fetchWithAuth";
 
-const AddUser = () => {
+const EditUser = () => {
+  const { userId } = useParams();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -24,37 +26,30 @@ const AddUser = () => {
 
   useEffect(() => {
     if (!checkAuth()) {
-      window.location.href = "/login";
+      navigate("/login");
       return;
     }
-    const token = localStorage.getItem("token");
-    fetch("http://localhost:8000/api/roles", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+
+    fetchWithAuth(`http://localhost:8000/api/users/${userId}`)
+      .then((response) => response.json())
+      .then((data) => setFormData(data))
+      .catch((error) => console.error("Error fetching user data:", error));
+
+    fetchWithAuth("http://localhost:8000/api/roles")
       .then((response) => response.json())
       .then((data) => setRoles(data))
       .catch((error) => console.error("Error fetching roles:", error));
 
-    fetch("http://localhost:8000/api/permissions", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    fetchWithAuth("http://localhost:8000/api/permissions")
       .then((response) => response.json())
       .then((data) => setPermissions(data))
       .catch((error) => console.error("Error fetching permissions:", error));
 
-    fetch("http://localhost:8000/api/agencies", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    fetchWithAuth("http://localhost:8000/api/agencies")
       .then((response) => response.json())
       .then((data) => setAgencies(data))
       .catch((error) => console.error("Error fetching agencies:", error));
-  }, [isAuthenticated]);
+  }, [checkAuth, userId, navigate]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -91,7 +86,6 @@ const AddUser = () => {
     if (!formData.username) newErrors.username = "Name is required";
     if (!formData.email) newErrors.email = "Email is required";
     if (!formData.phone) newErrors.phone = "Phone is required";
-    if (!formData.password) newErrors.password = "Password is required";
     if (formData.password !== formData.confirmPassword)
       newErrors.confirmPassword = "Passwords do not match";
     if (!formData.status) newErrors.status = "Status is required";
@@ -107,29 +101,27 @@ const AddUser = () => {
       return;
     }
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8000/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetchWithAuth(
+        `http://localhost:8000/api/users/${userId}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(formData),
+        }
+      );
       if (response.ok) {
-        alert("User added successfully");
-        window.location.href = "/user-management";
+        alert("User updated successfully");
+        navigate("/user-management");
       } else {
-        alert("Failed to add user");
+        alert("Failed to update user");
       }
     } catch (error) {
-      console.error("Error adding user:", error);
+      console.error("Error updating user:", error);
     }
   };
 
   return (
     <div className="add-user">
-      <h2>Ajouter Utilisateur</h2>
+      <h2>Modifier Utilisateur</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="username">Nom</label>
@@ -216,51 +208,45 @@ const AddUser = () => {
           </select>
           {errors.agencyId && <span className="error">{errors.agencyId}</span>}
         </div>
-        <div className="roles-section">
-          <h3>Rôles</h3>
-          <div className="grid">
-            {roles.map((role) => (
-              <div key={role.roleId}>
-                <input
-                  type="checkbox"
-                  id={`role_${role.roleId}`}
-                  name={`role_${role.roleId}`}
-                  value={role.roleId}
-                  checked={formData.roles.includes(role.roleId)}
-                  onChange={handleChange}
-                />
-                <label htmlFor={`role_${role.roleId}`}>{role.roleName}</label>
-              </div>
-            ))}
-          </div>
+        <div className="form-group">
+          <label>Rôles</label>
+          {roles.map((role) => (
+            <div key={role.roleId}>
+              <input
+                type="checkbox"
+                id={`role_${role.roleId}`}
+                name={`role_${role.roleId}`}
+                value={role.roleId}
+                checked={formData.roles.includes(role.roleId)}
+                onChange={handleChange}
+              />
+              <label htmlFor={`role_${role.roleId}`}>{role.roleName}</label>
+            </div>
+          ))}
         </div>
-        <div className="permissions-section">
-          <h3>Permissions</h3>
-          <div className="grid">
-            {permissions.map((permission) => (
-              <div key={permission.permissionId}>
-                <input
-                  type="checkbox"
-                  id={`permission_${permission.permissionId}`}
-                  name={`permission_${permission.permissionId}`}
-                  value={permission.permissionId}
-                  checked={formData.permissions.includes(
-                    permission.permissionId
-                  )}
-                  onChange={handleChange}
-                />
-                <label htmlFor={`permission_${permission.permissionId}`}>
-                  {permission.permissionName}
-                </label>
-              </div>
-            ))}
-          </div>
+        <div className="form-group">
+          <label>Permissions</label>
+          {permissions.map((permission) => (
+            <div key={permission.permissionId}>
+              <input
+                type="checkbox"
+                id={`permission_${permission.permissionId}`}
+                name={`permission_${permission.permissionId}`}
+                value={permission.permissionId}
+                checked={formData.permissions.includes(permission.permissionId)}
+                onChange={handleChange}
+              />
+              <label htmlFor={`permission_${permission.permissionId}`}>
+                {permission.permissionName}
+              </label>
+            </div>
+          ))}
         </div>
-        <button type="submit">Créer</button>
+        <button type="submit">Modifier</button>
       </form>
       <button
         className="back-button"
-        onClick={() => (window.location.href = "/user-management")}
+        onClick={() => navigate("/user-management")}
       >
         Back to List
       </button>
@@ -268,4 +254,4 @@ const AddUser = () => {
   );
 };
 
-export default AddUser;
+export default EditUser;
